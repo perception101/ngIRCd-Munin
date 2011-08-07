@@ -1,0 +1,102 @@
+#!/usr/bin/php
+<?php
+#
+# ngIRCd Monitoring for Munin
+# 
+# based on an original scripts by Martin Weinelt
+#
+# reports local connections only
+#
+#%# capabilities=autoconf
+
+$_nick = "munin-ircd";
+$_host = "tcp://localhost"; // change to ssl:// or tls:// for ssl-tunneled-connection, tcp:// for tcp-socket
+$_port = 6666;
+$_pass = "password";
+
+if (isset($argv['1']) && $argv['1'] == "config") {
+
+    print "graph_title ngIRCd Local Status\n";
+    print "graph_category Services\n";
+    print "graph_order localclients localservers channels operators\n";
+    print "graph_args --base 1000 -l 0\n";
+
+    print "localclients.label Local Clients\n";
+    print "localclients.draw LINE2\n";
+
+    print "localservers.label Local Servers\n";
+    print "localservers.draw LINE2\n";
+
+    print "channels.label Global Channels\n";
+    print "channels.draw LINE2\n";
+
+    print "operators.label Global Operators\n";
+    print "operators.draw LINE2\n";
+
+    exit;
+
+} elseif (isset($argv['1']) && $argv['1'] == "autoconf") {
+
+    $sock = fsockopen($_host, $_port);
+
+    if (!$sock) echo "no\n";
+    else echo "yes\n";
+
+    fclose($sock);
+
+    exit;
+
+}
+
+$sock = fsockopen($_host, $_port);
+
+if ($sock) {
+
+    fputs($sock, "PASS ".$_pass."\n");
+    fputs($sock, "NICK ".$_nick."\n");
+    fputs($sock, "USER munin munin localhost :munin-ircd\n");
+
+    while ($buffer = @fgets($sock, 1024)) {
+
+        #echo $buffer."\n";
+
+        $bits = explode(" ", trim($buffer));
+
+        if ($bits['0'] == "PING") { fputs($sock, "PONG ".$bits['1']."\n"); }
+
+        if (isset($argv['1']) && $argv['1'] == "debug") echo $buffer."\n";
+
+        // RAW
+        //  End of MOTD / MOTD missing
+        if ($bits['1'] == "422" || $bits['1'] == "376")  {
+
+            fputs($sock, "LUSERS\n");
+
+        } elseif ($bits['1'] == "255") {
+
+            // :irc.darkstorm.co.uk 255 munin-ircd :I have 1 users, 0 services and 1 servers
+            print "localclients.value ".$bits['5']."\n";
+            print "localservers.value ".$bits['10']."\n";
+
+        } elseif ($bits['1'] == "252") {
+
+            // :irc.linuxlounge.net 252 munin-ircd 1 :operator(s) online
+            print "operators.value ".$bits['3']."\n";
+
+        } elseif ($bits['1'] == "254") {
+
+            // :irc.linuxlounge.net 252 munin-ircd 2 :channels formed
+            print "channels.value ".$bits['3']."\n";
+
+            // and disconnect
+            fputs($sock, "QUIT :munin-ircd-monitoring\n");
+
+        }
+
+    }
+
+}
+
+fclose($sock);
+
+?>
