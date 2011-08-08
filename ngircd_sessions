@@ -4,13 +4,21 @@
 # ngIRCd Monitoring for Munin
 # 
 # based on an original scripts by Martin Weinelt
+# located here http://exchange.munin-monitoring.org/plugins/ircd/version/1
+#
+# modified for ngIRCd by Tony Evans
+# version 1.0
+# 8th August 2011
+#
+# Collects all local and global user/server values, along with operator and channel count
 #
 #%# capabilities=autoconf
 
-$_nick = "munin-ircd";
+$_nick = "munin-ircd";      // if you are running this on multiple hosts or against multiple irc servers
+                            // ensure the nick is unique
 $_host = "tcp://localhost"; // change to ssl:// or tls:// for ssl-tunneled-connection, tcp:// for tcp-socket
 $_port = 6666;
-$_pass = "password";
+$_pass = "password";        // comment this line out if no password required to access the server
 
 if (isset($argv['1']) && $argv['1'] == "config") {
 
@@ -54,7 +62,7 @@ $sock = fsockopen($_host, $_port);
 
 if ($sock) {
 
-    fputs($sock, "PASS ".$_pass."\n");
+    if ($_pass) fputs($sock, "PASS ".$_pass."\n");
     fputs($sock, "NICK ".$_nick."\n");
     fputs($sock, "USER munin munin localhost :munin-ircd\n");
 
