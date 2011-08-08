@@ -1,3 +1,60 @@
 ngIRCd Graphs for Munin
 
-Very basic presently, just wanted to kick off getting them on github.
+Some very basic scripts to monitor users, servers, channels and operators on an
+ngIRCd server.
+
+Based on an original script by Martin Weinelt
+   here -> http://exchange.munin-monitoring.org/plugins/ircd/version/1
+   
+Requires: PHP-CLI
+
+ABOUT
+
+There are three scripts which collect essentially the same information, it's
+likely you will either use ngircd_sessions, or both ngircd_global and 
+ngircd_local (although that will result in some duplicate data).
+
+ngircd_sessions counts global users, servers, channels and operators as well
+as local users and servers.
+
+ngircd_local only counts local users and servers, but still counts global
+channels and operators.
+
+ngircd_global only counts global users and servers, along with global channels
+and operators.
+
+Obviously you can easily remove duplicate data if you wish.
+
+INSTALLATION
+
+1. Copy the required scripts (or link to them) from your munin plugins
+directory, for example, /etc/munin/plugins.
+
+2. Recycle the munin-node process.
+
+CONFIGURATION
+
+Each script requires the same configuration information, which
+unfortunately has to be made in the actual script at present.
+
+$_nick - set this to the nick you want the script to use.
+         Note that if you intend to install this script on more than one host
+		 to check several IRC servers in the same network, you should ensure
+		 this value is unique.  If you intend to run multiple instances of the
+		 script from one host, to check several IRC servers, it does not need
+		 to be unique.  This is the recommended way to do it, otherwise you
+		 may end up counting Munin processes on other hosts in the IRC network.
+		 
+$_host - set to the correct protocol and IP address.
+
+$_port - set to the correct port for the IRC server in question.
+
+$_pass - if the IRC server requires a password upon connection, set it here,
+         otherwise leave this variable empty.
+
+FUTURE
+
+1. Update the script to check multiple IRC servers
+2. Consider changing to perl with Net::Telnet
+3. Consider using a single script and changing the output using
+   a munin environment setting.
