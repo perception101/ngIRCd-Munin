@@ -4,15 +4,21 @@
 # ngIRCd Monitoring for Munin
 # 
 # based on an original scripts by Martin Weinelt
+# located here http://exchange.munin-monitoring.org/plugins/ircd/version/1
 #
-# reports local connections only
+# modified for ngIRCd by Tony Evans
+# version 1.0
+# 8th August 2011
+#
+# Collects only local user/server values, along with operator and channel count
 #
 #%# capabilities=autoconf
 
-$_nick = "munin-ircd";
+$_nick = "munin-ircd";      // if you are running this on multiple hosts or against multiple irc servers
+                            // ensure the nick is unique
 $_host = "tcp://localhost"; // change to ssl:// or tls:// for ssl-tunneled-connection, tcp:// for tcp-socket
 $_port = 6666;
-$_pass = "password";
+$_pass = "password";        // leave this variable empty if no password is required to access the server
 
 if (isset($argv['1']) && $argv['1'] == "config") {
 
@@ -52,7 +58,7 @@ $sock = fsockopen($_host, $_port);
 
 if ($sock) {
 
-    fputs($sock, "PASS ".$_pass."\n");
+    if (!empty($_pass)) fputs($sock, "PASS ".$_pass."\n");
     fputs($sock, "NICK ".$_nick."\n");
     fputs($sock, "USER munin munin localhost :munin-ircd\n");
 
@@ -74,18 +80,16 @@ if ($sock) {
 
         } elseif ($bits['1'] == "255") {
 
-            // :irc.darkstorm.co.uk 255 munin-ircd :I have 1 users, 0 services and 1 servers
-            print "localclients.value ".$bits['5']."\n";
+            // subtract 1 from local clients, because one of them is me
+            print "localclients.value ".strval(intval($bits['5'])-1)."\n";
             print "localservers.value ".$bits['10']."\n";
 
         } elseif ($bits['1'] == "252") {
 
-            // :irc.linuxlounge.net 252 munin-ircd 1 :operator(s) online
             print "operators.value ".$bits['3']."\n";
 
         } elseif ($bits['1'] == "254") {
 
-            // :irc.linuxlounge.net 252 munin-ircd 2 :channels formed
             print "channels.value ".$bits['3']."\n";
 
             // and disconnect
