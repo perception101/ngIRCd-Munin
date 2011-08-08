@@ -103,7 +103,7 @@ if ($sock) {
         } elseif ($bits['1'] == "266") {
 
             // subtract 1 from global clients, because one of them is me
-            print "globalclients.value ".strval(intval($bits['3']-1))."\n";
+            print "globalclients.value ".strval(intval($bits['3'])-1)."\n";
 
             // and disconnect
             fputs($sock, "QUIT :munin-ircd-monitoring\n");
